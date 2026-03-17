@@ -1,0 +1,99 @@
+{% extends 'planner/base.html' %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<div class="compact-stack">
+  <div class="card dashboard-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="section-title">Projects Portfolio</h2>
+          <div class="section-subtitle">Lighter summary view with faster page rendering. Open drilldown for full staffing and constraint details.</div>
+        </div>
+      </div>
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-4">
+          <label class="filter-label">Search</label>
+          <input type="search" name="q" class="form-control" value="{{ q }}" placeholder="Project, owner, role, required skill">
+        </div>
+        <div class="col-lg-3">
+          <label class="filter-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            {% for value in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-3">
+          <label class="filter-label">Owner</label>
+          <select name="owner" class="form-select">
+            <option value="">All owners</option>
+            {% for value in owners %}<option value="{{ value }}" {% if selected_owner == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-2 d-flex gap-2">
+          <button class="btn btn-primary btn-sm w-100" type="submit">Apply</button>
+          <a href="{% url 'projects' %}" class="btn btn-outline-secondary btn-sm w-100">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-primary">{{ kpis.projects }}</div><div class="small-note">Visible projects</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-success">{{ kpis.avg_health }}%</div><div class="small-note">Average health</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-info">{{ kpis.ready_pool }}</div><div class="small-note">Ready pool</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-warning">{{ kpis.partial_pool }}</div><div class="small-note">Partial pool</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-danger">{{ kpis.blocked_pool }}</div><div class="small-note">Blocked pool</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-dark">{{ kpis.understaffed }}</div><div class="small-note">Under-staffed rules</div></div></div></div>
+  </div>
+
+  <div class="card dashboard-card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Project</th>
+              <th>Owner</th>
+              <th>Health</th>
+              <th>Candidates</th>
+              <th>Assigned</th>
+              <th>Issues</th>
+              <th>Top Gaps</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ row.project.name }}</div>
+                <div class="small-note">{{ row.project.code }} • {{ row.project.status }}</div>
+              </td>
+              <td>{{ row.project.owner }}</td>
+              <td><span class="chip {% if row.health >= 85 %}chip-ok{% elif row.health >= 70 %}chip-warn{% else %}chip-bad{% endif %}">{{ row.health }}%</span></td>
+              <td>
+                <div class="small"><span class="text-success">Ready {{ row.ready }}</span> • <span class="text-warning">Partial {{ row.partial }}</span> • <span class="text-danger">Blocked {{ row.blocked }}</span></div>
+              </td>
+              <td>{{ row.assigned_count }}</td>
+              <td>
+                <div class="small">Role {{ row.role_issue_count }} • Shift {{ row.shift_issue_count }} • Building {{ row.building_issue_count }}</div>
+              </td>
+              <td class="small">
+                {% for gap, count in row.top_gaps %}
+                  <div>{{ gap }} <span class="text-muted">({{ count }})</span></div>
+                {% empty %}
+                  <span class="text-muted">No major gaps</span>
+                {% endfor %}
+              </td>
+              <td class="text-end"><a class="btn btn-sm btn-primary" href="{% url 'project_detail' row.project.code %}">Open</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-4">No projects found for the selected filters.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

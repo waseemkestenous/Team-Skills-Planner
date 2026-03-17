@@ -1,0 +1,91 @@
+{% extends 'planner/crud/form_base.html' %}
+{% block form_content %}
+<form method="post" class="d-grid gap-4">{% csrf_token %}
+  <div class="row g-3">
+    <div class="col-xl-7">
+      <div class="admin-grid-card h-100">
+        <div class="card-body">
+          <h3 class="h6 mb-3">Project profile</h3>
+          <div class="row g-3">{% include 'planner/crud/_form_fields.html' with form=form exclude_fields='allowed_roles' %}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-5">
+      <div class="admin-grid-card h-100">
+        <div class="card-body">
+          <h3 class="h6 mb-3">Allowed roles</h3>
+          <div>{{ form.allowed_roles.label_tag }}{{ form.allowed_roles }}</div>
+          <div class="form-text">Leave empty to allow all roles. Use this list to block roles that are not suitable for the project.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-6">
+      <div class="admin-grid-card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 mb-0">Required skills</h3><span class="small text-muted">Thresholds per skill</span></div>
+          {{ req_formset.management_form }}
+          <div class="d-grid gap-3">
+            {% for item in req_formset %}
+              <div class="border rounded-3 p-2 bg-light">
+                <div class="row g-2 align-items-end">
+                  <div class="col-md-7">{{ item.skill.label_tag }}{{ item.skill }}</div>
+                  <div class="col-md-3">{{ item.min_value.label_tag }}{{ item.min_value }}</div>
+                  <div class="col-md-2">{% if item.instance.pk %}<div class="form-check mt-4">{{ item.DELETE }} <label class="form-check-label">Delete</label></div>{% endif %}</div>
+                  {{ item.id }}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6">
+      <div class="admin-grid-card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 mb-0">Role staffing constraints</h3><span class="small text-muted">Min / max by role</span></div>
+          {{ role_formset.management_form }}
+          <div class="d-grid gap-3">
+            {% for item in role_formset %}
+              <div class="border rounded-3 p-2 bg-light"><div class="row g-2 align-items-end"><div class="col-md-5">{{ item.role.label_tag }}{{ item.role }}</div><div class="col-md-3">{{ item.min_required.label_tag }}{{ item.min_required }}</div><div class="col-md-3">{{ item.max_allowed.label_tag }}{{ item.max_allowed }}</div><div class="col-md-1">{% if item.instance.pk %}<div class="form-check mt-4">{{ item.DELETE }}</div>{% endif %}</div>{{ item.id }}</div></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-6">
+      <div class="admin-grid-card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 mb-0">Shift constraints</h3><span class="small text-muted">Min / max by role and shift</span></div>
+          {{ shift_formset.management_form }}
+          <div class="d-grid gap-3">
+            {% for item in shift_formset %}
+              <div class="border rounded-3 p-2 bg-light"><div class="row g-2 align-items-end"><div class="col-md-4">{{ item.role.label_tag }}{{ item.role }}</div><div class="col-md-3">{{ item.shift.label_tag }}{{ item.shift }}</div><div class="col-md-2">{{ item.min_required.label_tag }}{{ item.min_required }}</div><div class="col-md-2">{{ item.max_allowed.label_tag }}{{ item.max_allowed }}</div><div class="col-md-1">{% if item.instance.pk %}<div class="form-check mt-4">{{ item.DELETE }}</div>{% endif %}</div>{{ item.id }}</div></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-6">
+      <div class="admin-grid-card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 mb-0">Building constraints</h3><span class="small text-muted">Min / max by role and building</span></div>
+          {{ building_formset.management_form }}
+          <div class="d-grid gap-3">
+            {% for item in building_formset %}
+              <div class="border rounded-3 p-2 bg-light"><div class="row g-2 align-items-end"><div class="col-md-4">{{ item.role.label_tag }}{{ item.role }}</div><div class="col-md-3">{{ item.building.label_tag }}{{ item.building }}</div><div class="col-md-2">{{ item.min_required.label_tag }}{{ item.min_required }}</div><div class="col-md-2">{{ item.max_allowed.label_tag }}{{ item.max_allowed }}</div><div class="col-md-1">{% if item.instance.pk %}<div class="form-check mt-4">{{ item.DELETE }}</div>{% endif %}</div>{{ item.id }}</div></div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2"><button class="btn btn-primary" type="submit">Save project</button><a class="btn btn-outline-secondary" href="{% url 'crud_projects' %}">Cancel</a></div>
+</form>
+{% endblock %}

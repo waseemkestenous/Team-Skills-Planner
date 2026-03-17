@@ -1,0 +1,9 @@
+<div class="card dashboard-card mb-4">
+  <div class="card-body py-2">
+    <div class="d-flex flex-wrap gap-2">
+      {% for name,label in admin_sections %}
+        <a class="btn {% if active_admin_section == name %}btn-primary{% else %}btn-outline-primary{% endif %} btn-sm" href="{% url name %}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>

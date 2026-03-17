@@ -1,0 +1,75 @@
+{% extends 'planner/base.html' %}
+{% block title %}Employee Profile{% endblock %}
+{% block content %}
+<div class="compact-stack">
+  <div class="card dashboard-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h2 class="section-title mb-0">{{ emp.name }}</h2>
+            <span class="chip chip-role">{{ emp.role.name }}</span>
+            <span class="chip chip-muted">{{ emp.code }}</span>
+            <span class="chip chip-muted">{{ emp.shift }} • {{ emp.building }}</span>
+          </div>
+          <div class="section-subtitle">Compact executive profile with readiness, assignments, and evaluation history.</div>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'team' %}">Back to Employees</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-primary">{{ kpis.latest_score }}%</div><div class="small-note">Latest score</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-success">{{ kpis.level }}</div><div class="small-note">Current level</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-info">{{ kpis.evaluations }}</div><div class="small-note">Evaluations</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-warning">{{ kpis.assigned_projects }}</div><div class="small-note">Assigned projects</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-dark">{{ kpis.trainings }}</div><div class="small-note">Trainings</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-secondary" style="font-size:1.15rem">{{ kpis.availability }}</div><div class="small-note">Availability</div></div></div></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-4">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <h3 class="h6">Profile Summary</h3>
+        <div class="small mb-2"><strong>Email:</strong> {{ emp.email }}</div>
+        <div class="small mb-2"><strong>Status:</strong> {{ emp.status }}</div>
+        <div class="small mb-2"><strong>Thresholds:</strong> Over {{ emp.role.over_threshold }} / Qualified {{ emp.role.qualified_threshold }} / Improve {{ emp.role.improve_threshold }}</div>
+        {% if availability %}
+          <div class="small mb-2"><strong>Max concurrent projects:</strong> {{ availability.max_concurrent_projects }}</div>
+          <div class="small mb-2"><strong>Allowed shifts:</strong> {{ availability.allowed_shifts|default:'—' }}</div>
+          <div class="small"><strong>Allowed buildings:</strong> {{ availability.allowed_buildings|default:'—' }}</div>
+        {% else %}
+          <div class="text-muted small">No availability profile configured.</div>
+        {% endif %}
+      </div></div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <h3 class="h6">Assigned Projects</h3>
+        <div class="small">
+          {% for p in assigned_projects %}
+            <div class="mb-2 d-flex justify-content-between gap-2"><span>{{ p.name }}</span><a class="btn btn-sm btn-outline-secondary" href="{% url 'project_detail' p.code %}">Open</a></div>
+          {% empty %}<div class="text-muted">No projects assigned.</div>{% endfor %}
+        </div>
+      </div></div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <h3 class="h6">Assigned Training</h3>
+        <div class="small">
+          {% for t in trainings %}<div class="mb-2">{{ t.title }} <span class="text-muted">• {{ t.training_type }}</span></div>{% empty %}<div class="text-muted">No trainings assigned.</div>{% endfor %}
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-8"><div class="card dashboard-card h-100"><div class="card-body"><h3 class="h6">Evaluation Trend</h3><div class="section-subtitle mb-3">Latest performance movement over time.</div><div class="chart-wrap-sm"><canvas id="trendChart"></canvas></div></div></div></div>
+    <div class="col-xl-4"><div class="card dashboard-card h-100"><div class="card-body"><h3 class="h6">Project Readiness Snapshot</h3><div class="table-responsive"><table class="table table-sm table-striped table-tight mb-0"><thead><tr><th>Project</th><th>Fit</th><th>Status</th></tr></thead><tbody>{% for item in readiness_rows %}<tr><td>{{ item.project.name }}</td><td>{{ item.fit }}%</td><td><span class="chip {% if item.status == 'Ready' %}chip-ok{% elif item.status == 'Partial' %}chip-warn{% else %}chip-bad{% endif %}">{{ item.status }}</span></td></tr>{% empty %}<tr><td colspan="3" class="text-muted">No readiness data</td></tr>{% endfor %}</tbody></table></div></div></div></div>
+  </div>
+
+  <div class="card dashboard-card"><div class="card-body"><h3 class="h6">Evaluation History</h3><div class="table-responsive"><table class="table table-sm table-striped align-middle"><thead class="table-light"><tr><th>Date</th><th>Evaluator</th><th>Score</th><th>Action Plan</th><th></th></tr></thead><tbody>{% for row in eval_rows %}<tr><td>{{ row.ev.date }}</td><td>{{ row.ev.evaluator }}</td><td><span class="chip {% if row.score >= 85 %}chip-ok{% elif row.score >= 70 %}chip-warn{% else %}chip-bad{% endif %}">{{ row.score }}%</span></td><td class="small">{{ row.ev.action_plan|default:'—'|truncatechars:90 }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'evaluation_detail' row.ev.code %}">Open</a></td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No evaluations yet.</td></tr>{% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}
+{% block extra_js %}<script>new Chart(document.getElementById('trendChart'), {type:'line', data:{labels:{{ trend_labels|safe }}, datasets:[{label:'Score', data:{{ trend_values|safe }}, tension:.25}]}, options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,max:100}}}});</script>{% endblock %}

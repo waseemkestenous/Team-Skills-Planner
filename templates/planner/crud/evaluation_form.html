@@ -1,0 +1,141 @@
+{% extends 'planner/crud/form_base.html' %}
+{% block form_content %}
+<form method="post" class="d-grid gap-4" id="evaluationForm">{% csrf_token %}
+  <div class="row g-3">
+    <div class="col-xl-8">
+      <div class="border rounded-4 p-3 bg-light h-100">
+        <h3 class="h6 mb-3">Evaluation Header</h3>
+        <div class="row g-3">
+          <div class="col-md-4">{{ form.code.label_tag }}{{ form.code }}</div>
+          <div class="col-md-4">{{ form.employee.label_tag }}{{ form.employee }}</div>
+          <div class="col-md-4">{{ form.project.label_tag }}{{ form.project }}<div class="form-text">Optional. Leave empty for a general employee evaluation.</div></div>
+          <div class="col-md-4">{{ form.evaluator.label_tag }}{{ form.evaluator }}</div>
+          <div class="col-md-4">{{ form.date.label_tag }}{{ form.date }}</div>
+          <div class="col-md-6">{{ form.strengths_text.label_tag }}{{ form.strengths_text }}<div class="form-text">{{ form.strengths_text.help_text }}</div></div>
+          <div class="col-md-6">{{ form.weaknesses_text.label_tag }}{{ form.weaknesses_text }}<div class="form-text">{{ form.weaknesses_text.help_text }}</div></div>
+          <div class="col-12">{{ form.action_plan.label_tag }}{{ form.action_plan }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="border rounded-4 p-3 bg-light h-100">
+        <h3 class="h6 mb-3">Live Summary</h3>
+        <div class="row g-2">
+          <div class="col-6"><div class="summary-box"><div class="value text-primary" id="liveScore">0%</div><div class="label">Weighted score</div></div></div>
+          <div class="col-6"><div class="summary-box"><div class="value text-info" id="liveLevel">-</div><div class="label">Calculated level</div></div></div>
+          <div class="col-6"><div class="summary-box"><div class="value text-danger" id="liveGapCount">0</div><div class="label">Below min</div></div></div>
+          <div class="col-6"><div class="summary-box"><div class="value text-success" id="liveSkillCount">0</div><div class="label">Active rows</div></div></div>
+        </div>
+        <div class="small-note mt-3">Tip: choose an employee to load that role's mapped skills, or clone the latest evaluation for faster entry.</div>
+        <div class="d-flex gap-2 mt-3">
+          <button class="btn btn-sm btn-outline-primary" type="button" id="loadRoleSkillsBtn">Load role skills</button>
+          <button class="btn btn-sm btn-outline-secondary" type="button" id="loadLatestBtn">Load latest</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="d-flex justify-content-between align-items-center mb-3"><div><h3 class="h6 mb-1">Result Rows</h3><div class="section-subtitle">Grouped input with add/remove support and automatic score feedback.</div></div><button class="btn btn-sm btn-outline-primary" type="button" id="addRowBtn">Add Row</button></div>
+    {{ result_formset.management_form }}
+    <div class="d-grid gap-3" id="resultRows">
+      {% for item in result_formset %}
+      <div class="border rounded-3 p-3 bg-light result-row" data-form-index="{{ forloop.counter0 }}">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">{{ item.skill.label_tag }}{{ item.skill }}</div>
+          <div class="col-md-2">{{ item.value.label_tag }}{{ item.value }}</div>
+          <div class="col-md-2">{{ item.status.label_tag }}{{ item.status }}</div>
+          <div class="col-md-4">{{ item.notes.label_tag }}{{ item.notes }}</div>
+          <div class="col-md-1 d-flex align-items-end justify-content-end gap-2">{% if item.instance.pk %}<div class="form-check">{{ item.DELETE }}</div>{% endif %}<button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></div>
+          {{ item.id }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <template id="emptyFormTemplate">
+    <div class="border rounded-3 p-3 bg-light result-row" data-form-index="__prefix__">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3">{{ result_formset.empty_form.skill.label_tag }}{{ result_formset.empty_form.skill }}</div>
+        <div class="col-md-2">{{ result_formset.empty_form.value.label_tag }}{{ result_formset.empty_form.value }}</div>
+        <div class="col-md-2">{{ result_formset.empty_form.status.label_tag }}{{ result_formset.empty_form.status }}</div>
+        <div class="col-md-4">{{ result_formset.empty_form.notes.label_tag }}{{ result_formset.empty_form.notes }}</div>
+        <div class="col-md-1 d-flex align-items-end justify-content-end gap-2"><button type="button" class="btn btn-sm btn-outline-danger remove-row">×</button></div>
+        {{ result_formset.empty_form.id }}
+      </div>
+    </div>
+  </template>
+  <div class="d-flex gap-2"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-outline-secondary" href="javascript:history.back()">Cancel</a></div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+const roleSkills = {{ role_skills_json|safe }};
+const employeeRoleMap = {{ employee_role_map_json|safe }};
+const latestMap = {{ latest_map_json|safe }};
+const employeeSelect = document.getElementById('id_employee');
+const totalForms = document.getElementById('id_results-TOTAL_FORMS');
+const rowsWrap = document.getElementById('resultRows');
+const template = document.getElementById('emptyFormTemplate').innerHTML;
+const thresholds = {};
+for (const [roleId, skills] of Object.entries(roleSkills)) { skills.forEach(s => thresholds[`${roleId}:${s.skill_id}`] = s); }
+function getRoleThresholds(){ const roleId = employeeRoleMap[employeeSelect.value]; return roleSkills[roleId] || []; }
+function addRow(prefill={}) {
+  const idx = parseInt(totalForms.value, 10);
+  const html = template.replaceAll('__prefix__', idx);
+  rowsWrap.insertAdjacentHTML('beforeend', html);
+  totalForms.value = idx + 1;
+  const row = rowsWrap.lastElementChild;
+  if (prefill.skill_id) row.querySelector('[name$="-skill"]').value = String(prefill.skill_id);
+  if (prefill.value !== undefined) row.querySelector('[name$="-value"]').value = prefill.value;
+  if (prefill.status) row.querySelector('[name$="-status"]').value = prefill.status;
+  if (prefill.notes) row.querySelector('[name$="-notes"]').value = prefill.notes;
+  bindRow(row);
+  refreshSummary();
+}
+function bindRow(row){ row.querySelector('.remove-row')?.addEventListener('click', ()=>{ const deleteBox = row.querySelector('input[type="checkbox"][name$="-DELETE"]'); if(deleteBox){ deleteBox.checked = true; row.classList.add('d-none'); } else { row.remove(); totalForms.value = document.querySelectorAll('#resultRows .result-row').length; } refreshSummary(); }); ['change','input'].forEach(evt=>row.addEventListener(evt, refreshSummary)); }
+function currentRows(){ return [...document.querySelectorAll('#resultRows .result-row')].filter(r=>!r.classList.contains('d-none')); }
+function refreshSummary(){
+  const roleId = employeeRoleMap[employeeSelect.value];
+  const rows = currentRows();
+  let weighted = 0, totalWeight = 0, gaps = 0;
+  rows.forEach(row => {
+    const skillId = row.querySelector('[name$="-skill"]').value;
+    if(!skillId) return;
+    const meta = thresholds[`${roleId}:${skillId}`];
+    const value = parseFloat(row.querySelector('[name$="-value"]').value || 0);
+    const status = row.querySelector('[name$="-status"]').value;
+    let score = value;
+    let compare = value;
+    let weight = meta ? parseFloat(meta.weight || 0) : 1;
+    if (meta && meta.scoring_type === 'Scored rubric (1-5)') { score = Math.max(0, Math.min(100, (value / 5) * 100)); }
+    if (meta && meta.scoring_type === 'Pass/Fail checklist') { score = status === 'Pass' ? 100 : 0; compare = status === 'Pass' ? 1 : 0; }
+    weighted += score * weight;
+    totalWeight += weight;
+    if (meta && compare < parseFloat(meta.min_value || 0)) gaps += 1;
+  });
+  const finalScore = totalWeight ? (weighted / totalWeight) : 0;
+  document.getElementById('liveScore').textContent = finalScore.toFixed(1) + '%';
+  document.getElementById('liveGapCount').textContent = gaps;
+  document.getElementById('liveSkillCount').textContent = rows.length;
+  const roleIdVal = employeeRoleMap[employeeSelect.value];
+  const empOption = employeeSelect.options[employeeSelect.selectedIndex];
+  let roleName = empOption ? empOption.text : '';
+  let level = '-';
+  if (finalScore >= 90) level = 'Over Qualified'; else if (finalScore >= 75) level = 'Qualified'; else if (finalScore >= 60) level = 'Needs Improvement'; else level = 'Not Qualified';
+  document.getElementById('liveLevel').textContent = level;
+}
+function loadRoleSkills(){
+  currentRows().forEach(r => { const del = r.querySelector('input[type="checkbox"][name$="-DELETE"]'); if(del){ del.checked = true; r.classList.add('d-none'); } else { r.remove(); } });
+  totalForms.value = 0;
+  getRoleThresholds().forEach(s => addRow({skill_id:s.skill_id, value:'', status:s.scoring_type === 'Pass/Fail checklist' ? 'Fail' : 'Meets Min'}));
+}
+function loadLatest(){ const rows = latestMap[employeeSelect.value] || []; if(!rows.length) return; currentRows().forEach(r => { const del = r.querySelector('input[type="checkbox"][name$="-DELETE"]'); if(del){ del.checked = true; r.classList.add('d-none'); } else { r.remove(); } }); totalForms.value = 0; rows.forEach(r => addRow(r)); }
+document.querySelectorAll('#resultRows .result-row').forEach(bindRow);
+document.getElementById('addRowBtn').addEventListener('click', ()=>addRow());
+document.getElementById('loadRoleSkillsBtn').addEventListener('click', loadRoleSkills);
+document.getElementById('loadLatestBtn').addEventListener('click', loadLatest);
+employeeSelect.addEventListener('change', refreshSummary);
+refreshSummary();
+</script>
+{% endblock %}

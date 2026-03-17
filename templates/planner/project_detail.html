@@ -1,0 +1,123 @@
+{% extends 'planner/base.html' %}
+{% block title %}Project Drilldown{% endblock %}
+{% block content %}
+<div class="compact-stack">
+  <div class="card dashboard-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+            <h2 class="section-title mb-0">{{ project.name }}</h2>
+            <span class="chip {% if project.status == 'Active' %}chip-ok{% elif project.status == 'At Risk' %}chip-warn{% else %}chip-bad{% endif %}">{{ project.status }}</span>
+            <span class="chip chip-muted">{{ project.code }}</span>
+            <span class="chip chip-muted">Owner: {{ project.owner }}</span>
+          </div>
+          <div class="section-subtitle">Compact executive drilldown with direct staffing actions.</div>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'projects' %}">Back to Projects</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-primary">{{ kpis.health }}%</div><div class="small-note">Health</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-success">{{ kpis.ready }}</div><div class="small-note">Ready pool</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-warning">{{ kpis.partial }}</div><div class="small-note">Partial pool</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-info">{{ kpis.assigned }}</div><div class="small-note">Assigned</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-danger">{{ kpis.issues }}</div><div class="small-note">Constraint issues</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-dark">{{ kpis.required_skills }}</div><div class="small-note">Required skills</div></div></div></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-4">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <h3 class="h6">Project Scope</h3>
+        <div class="mb-3"><strong>Allowed Roles</strong><br>{% for role in project.allowed_roles.all %}<span class="chip chip-role">{{ role.name }}</span>{% empty %}<span class="text-muted small">All roles allowed</span>{% endfor %}</div>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-tight mb-0">
+            <thead><tr><th>Required Skill</th><th>Min</th></tr></thead>
+            <tbody>{% for req in project.required_skills.all %}<tr><td>{{ req.skill.name }}</td><td>{{ req.min_value }}</td></tr>{% empty %}<tr><td colspan="2" class="text-muted">No required skills</td></tr>{% endfor %}</tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+    <div class="col-xl-8">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <h3 class="h6">Constraint Summary</h3>
+        <div class="row g-3">
+          <div class="col-md-4"><div class="matrix-stat-card"><div class="kpi-value text-primary">{{ row.role_issue_count }}</div><div class="label">Role issues</div></div></div>
+          <div class="col-md-4"><div class="matrix-stat-card"><div class="kpi-value text-warning">{{ row.shift_issue_count }}</div><div class="label">Shift issues</div></div></div>
+          <div class="col-md-4"><div class="matrix-stat-card"><div class="kpi-value text-danger">{{ row.building_issue_count }}</div><div class="label">Building issues</div></div></div>
+        </div>
+        <div class="mt-3">
+          <h4 class="h6">Top Common Gaps</h4>
+          <div class="small">
+            {% for gap,count in row.top_gaps %}<div>{{ gap }} <span class="text-muted">({{ count }})</span></div>{% empty %}<div class="text-muted">No common gaps</div>{% endfor %}
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-6">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 mb-0">Assigned Employees</h3></div>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle">
+            <thead class="table-light"><tr><th>Employee</th><th>Role</th><th>Fit</th><th></th></tr></thead>
+            <tbody>
+            {% for assigned in row.assigned_rows %}
+              <tr>
+                <td><div class="fw-semibold">{{ assigned.employee.name }}</div><div class="small-note">{{ assigned.employee.code }} • {{ assigned.score }}% • {{ assigned.level }}</div></td>
+                <td>{{ assigned.employee.role.name }}</td>
+                <td><span class="chip {% if assigned.status == 'Ready' %}chip-ok{% elif assigned.status == 'Partial' %}chip-warn{% else %}chip-bad{% endif %}">{{ assigned.status }} • {{ assigned.fit }}%</span></td>
+                <td>
+                  <div class="d-flex gap-2 justify-content-end">
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'employee_detail' assigned.employee.code %}">Open</a>
+                    <form method="post" action="{% url 'project_unassign_employee' project.code %}">{% csrf_token %}<input type="hidden" name="employee_code" value="{{ assigned.employee.code }}"><button class="btn btn-sm btn-outline-danger" type="submit">Unassign</button></form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">No employees assigned yet.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+    <div class="col-xl-6">
+      <div class="card dashboard-card h-100"><div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="h6 mb-0">Recommended Candidates</h3></div>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle">
+            <thead class="table-light"><tr><th>Employee</th><th>Role</th><th>Fit</th><th></th></tr></thead>
+            <tbody>
+            {% for cand in row.recommended_rows %}
+              <tr>
+                <td><div class="fw-semibold">{{ cand.employee.name }}</div><div class="small-note">{{ cand.employee.code }} • {{ cand.score }}% • {{ cand.level }}</div></td>
+                <td>{{ cand.employee.role.name }}</td>
+                <td><span class="chip {% if cand.status == 'Ready' %}chip-ok{% elif cand.status == 'Partial' %}chip-warn{% else %}chip-bad{% endif %}">{{ cand.status }} • {{ cand.fit }}%</span></td>
+                <td>
+                  {% if cand.status == 'Role Blocked' %}<span class="text-muted small">Role blocked</span>{% else %}
+                  <div class="d-flex gap-2 justify-content-end">
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'employee_detail' cand.employee.code %}">Open</a>
+                    <form method="post" action="{% url 'project_assign_employee' project.code %}">{% csrf_token %}<input type="hidden" name="employee_code" value="{{ cand.employee.code }}"><button class="btn btn-sm btn-primary" type="submit">Assign</button></form>
+                  </div>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">No candidate pool available.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-xl-4"><div class="card dashboard-card h-100"><div class="card-body"><h3 class="h6">Role Staffing</h3><div class="table-responsive"><table class="table table-sm table-striped table-tight mb-0"><thead><tr><th>Role</th><th>Min</th><th>Assigned</th><th>Status</th></tr></thead><tbody>{% for item in row.role_rows %}<tr><td>{{ item.constraint.role.name }}</td><td>{{ item.constraint.min_required }}</td><td>{{ item.assigned }}</td><td><span class="chip {% if item.status == 'Balanced' %}chip-ok{% elif item.status == 'Under Staffed' %}chip-warn{% else %}chip-bad{% endif %}">{{ item.status }}</span></td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No role rules</td></tr>{% endfor %}</tbody></table></div></div></div></div>
+    <div class="col-xl-4"><div class="card dashboard-card h-100"><div class="card-body"><h3 class="h6">Shift Constraints</h3><div class="table-responsive"><table class="table table-sm table-striped table-tight mb-0"><thead><tr><th>Role</th><th>Shift</th><th>Min</th><th>Assigned</th></tr></thead><tbody>{% for item in row.shift_rows %}<tr><td>{{ item.constraint.role.name }}</td><td>{{ item.constraint.shift }}</td><td>{{ item.constraint.min_required }}</td><td>{{ item.assigned }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No shift rules</td></tr>{% endfor %}</tbody></table></div></div></div></div>
+    <div class="col-xl-4"><div class="card dashboard-card h-100"><div class="card-body"><h3 class="h6">Building Constraints</h3><div class="table-responsive"><table class="table table-sm table-striped table-tight mb-0"><thead><tr><th>Role</th><th>Building</th><th>Min</th><th>Assigned</th></tr></thead><tbody>{% for item in row.building_rows %}<tr><td>{{ item.constraint.role.name }}</td><td>{{ item.constraint.building }}</td><td>{{ item.constraint.min_required }}</td><td>{{ item.assigned }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No building rules</td></tr>{% endfor %}</tbody></table></div></div></div></div>
+  </div>
+</div>
+{% endblock %}

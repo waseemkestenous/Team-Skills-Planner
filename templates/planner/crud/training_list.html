@@ -1,0 +1,9 @@
+{% extends 'planner/crud/list_base.html' %}
+{% block list_filters %}
+<form class="row g-2"><div class="col-md-6"><input class="form-control" name="q" value="{{ q }}" placeholder="{{ meta.search_placeholder }}"></div><div class="col-auto"><button class="btn btn-outline-primary">Search</button></div></form>
+{% endblock %}
+{% block list_content %}
+<div class="table-responsive"><table class="table table-sm align-middle"><thead class="table-light"><tr><th>Code</th><th>Title</th><th>Type</th><th>Owner</th><th>Pass Score</th><th></th></tr></thead><tbody>
+{% for row in rows %}<tr><td>{{ row.code }}</td><td>{{ row.title }}</td><td>{{ row.training_type }}</td><td>{{ row.owner }}</td><td>{{ row.pass_score }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'training_edit' row.pk %}">Edit</a> <a class="btn btn-sm btn-outline-danger" href="{% url 'training_delete' row.pk %}">Delete</a></td></tr>{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">No trainings found.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

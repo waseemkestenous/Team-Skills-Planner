@@ -1,0 +1,153 @@
+{% extends 'planner/base.html' %}
+{% block title %}Training Drilldown{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+  <div>
+    <div class="small-note mb-2"><a href="{% url 'training' %}" class="text-decoration-none">Training</a> / {{ training.code }}</div>
+    <h1 class="page-title h3 mb-1">{{ training.title }}</h1>
+    <div class="small-note">{{ training.code }} • {{ training.training_type }} • {{ training.owner }}{% if training.duration %} • {{ training.duration }}{% endif %} • Pass {{ training.pass_score }}%</div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'training' %}" class="btn btn-outline-secondary">Back to Training</a>
+    <a href="{% url 'training_edit' training.pk %}" class="btn btn-primary">Edit Training</a>
+    {% if recommended_unassigned_ids %}
+    <form method="post" action="{% url 'training_bulk_assign' training.code %}" class="d-inline">
+      {% csrf_token %}
+      <button class="btn btn-success" type="submit">Bulk Assign Recommended</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-primary">{{ kpis.linked_skills }}</div><div class="small-note">Linked skills</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-success">{{ kpis.assigned_count }}</div><div class="small-note">Assigned employees</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-warning">{{ kpis.recommended_count }}</div><div class="small-note">Recommended employees</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-danger">{{ kpis.unassigned_recommended }}</div><div class="small-note">Not yet assigned</div></div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-xl-4">
+    <div class="card dashboard-card h-100"><div class="card-body">
+      <h2 class="section-title">Linked Skills</h2>
+      <div class="section-subtitle mb-3">Skills this training is meant to improve</div>
+      <div class="d-grid gap-2">
+        {% for row in skill_demand %}
+          <div class="border rounded-3 p-3 bg-light">
+            <div class="fw-semibold">{{ row.skill.name }}</div>
+            <div class="small-note">{{ row.skill.pillar }} • {{ row.skill.scoring_type }}</div>
+            <div class="small-note mt-1">Recommended for {{ row.employees }} employee(s)</div>
+            {% if row.skill.notes %}<div class="small-note mt-1">{{ row.skill.notes }}</div>{% endif %}
+          </div>
+        {% empty %}
+          <div class="empty-state">No linked skills for this training.</div>
+        {% endfor %}
+      </div>
+    </div></div>
+  </div>
+  <div class="col-xl-8">
+    <div class="card dashboard-card h-100"><div class="card-body">
+      <h2 class="section-title">Assigned Employees</h2>
+      <div class="section-subtitle mb-3">Current enrollment and role coverage</div>
+      <div class="mb-3">
+        {% for role_name in assigned_role_names %}<span class="chip chip-role">{{ role_name }}</span>{% empty %}<span class="text-muted">No assigned roles</span>{% endfor %}
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle table-tight">
+          <thead class="table-light"><tr><th>Employee</th><th>Role</th><th>Shift</th><th>Building</th><th>Projects</th><th class="text-end">Action</th></tr></thead>
+          <tbody>
+            {% for emp in assigned_employees %}
+              <tr>
+                <td><a href="{% url 'employee_detail' emp.code %}" class="text-decoration-none fw-semibold">{{ emp.name }}</a><div class="small-note">{{ emp.code }}</div></td>
+                <td>{{ emp.role.name }}</td>
+                <td>{{ emp.shift }}</td>
+                <td>{{ emp.building }}</td>
+                <td>{% for project in emp.assigned_projects.all %}<span class="chip chip-muted">{{ project.code }}</span>{% empty %}<span class="text-muted">No projects</span>{% endfor %}</td>
+                <td class="text-end">
+                  <form method="post" action="{% url 'training_unassign_employee' training.code %}" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="employee_id" value="{{ emp.id }}">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Unassign</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="empty-state">No employees are assigned to this training.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="card dashboard-card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div>
+        <h2 class="section-title">Recommended Employees & Gap Reasons</h2>
+        <div class="section-subtitle">Employees whose latest evaluation gaps match this training</div>
+      </div>
+      {% if recommended_rows %}
+      <form method="post" action="{% url 'training_bulk_assign' training.code %}" id="bulkAssignForm">
+        {% csrf_token %}
+        <button class="btn btn-sm btn-success" type="submit">Assign Selected</button>
+      </form>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle table-tight">
+        <thead class="table-light"><tr><th style="width:40px">Sel</th><th>Employee</th><th>Role</th><th>Level</th><th>Latest Score</th><th>Status</th><th>Gap Reasons</th><th class="text-end">Action</th></tr></thead>
+        <tbody>
+          {% for row in recommended_rows %}
+            <tr>
+              <td>
+                {% if not row.already_assigned %}
+                <input type="checkbox" class="form-check-input" name="employee_ids" value="{{ row.employee.id }}" form="bulkAssignForm" checked>
+                {% endif %}
+              </td>
+              <td><a href="{% url 'employee_detail' row.employee.code %}" class="text-decoration-none fw-semibold">{{ row.employee.name }}</a><div class="small-note">{{ row.employee.code }}</div></td>
+              <td>{{ row.employee.role.name }}</td>
+              <td>
+                {% if row.level == 'Qualified' or row.level == 'Over Qualified' %}<span class="chip chip-ok">{{ row.level }}</span>
+                {% elif row.level == 'Needs Improvement' %}<span class="chip chip-warn">{{ row.level }}</span>
+                {% else %}<span class="chip chip-bad">{{ row.level }}</span>{% endif %}
+              </td>
+              <td>{{ row.score }}%</td>
+              <td>{% if row.already_assigned %}<span class="chip chip-ok">Already assigned</span>{% else %}<span class="chip chip-warn">Recommended</span>{% endif %}</td>
+              <td>
+                <div class="d-grid gap-2">
+                {% for gap in row.matched_gaps %}
+                  <div class="border rounded-3 p-2 bg-light">
+                    <div class="fw-semibold">{{ gap.skill.name }}</div>
+                    <div class="small-note">Current {{ gap.value }} • Required {{ gap.threshold }} • {{ gap.status }}</div>
+                    {% if gap.notes %}<div class="small-note mt-1">{{ gap.notes }}</div>{% endif %}
+                  </div>
+                {% endfor %}
+                </div>
+              </td>
+              <td class="text-end">
+                {% if row.already_assigned %}
+                <form method="post" action="{% url 'training_unassign_employee' training.code %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="employee_id" value="{{ row.employee.id }}">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Unassign</button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'training_assign_employee' training.code %}" class="d-inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="employee_id" value="{{ row.employee.id }}">
+                  <button class="btn btn-sm btn-outline-success" type="submit">Assign</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="8" class="empty-state">No current employee gaps map to this training.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

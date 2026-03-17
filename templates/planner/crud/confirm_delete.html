@@ -1,0 +1,13 @@
+{% extends 'planner/base.html' %}
+{% block content %}
+{% include 'planner/crud/_admin_tabs.html' %}
+<div class="card dashboard-card"><div class="card-body">
+  <h2 class="section-title mb-2">{{ title }}</h2>
+  <div class="section-subtitle mb-3">This action cannot be undone.</div>
+  <p>Are you sure you want to delete <strong>{{ object }}</strong>?</p>
+  <form method="post">{% csrf_token %}
+    <button class="btn btn-danger" type="submit">Delete</button>
+    <a class="btn btn-outline-secondary" href="{{ cancel_url }}">Cancel</a>
+  </form>
+</div></div>
+{% endblock %}

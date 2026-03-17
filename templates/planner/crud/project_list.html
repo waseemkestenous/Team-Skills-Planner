@@ -1,0 +1,57 @@
+{% extends 'planner/crud/list_base.html' %}
+{% block list_filters %}
+<form class="row g-2 align-items-end">
+  <div class="col-lg-5 col-md-6"><label class="filter-label">Search</label><input class="form-control" name="q" value="{{ q }}" placeholder="{{ meta.search_placeholder }}"></div>
+  <div class="col-lg-3 col-md-3"><label class="filter-label">Status</label><select class="form-select" name="status"><option value="">All Statuses</option>{% for item in statuses %}<option value="{{ item }}" {% if selected_status == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+  <div class="col-lg-3 col-md-3"><label class="filter-label">Owner</label><select class="form-select" name="owner"><option value="">All Owners</option>{% for item in owners %}<option value="{{ item }}" {% if selected_owner == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+  <div class="col-lg-1 col-md-12 d-grid"><button class="btn btn-outline-primary">Apply</button></div>
+</form>
+<div class="row g-3 mt-1">
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-primary">{{ kpis.projects }}</div><div class="label">Visible projects</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-success">{{ kpis.active }}</div><div class="label">Active</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-warning">{{ kpis.at_risk }}</div><div class="label">At risk</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-danger">{{ kpis.blocked }}</div><div class="label">Blocked</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-info">{{ kpis.assigned }}</div><div class="label">Assigned employees</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-dark">{{ kpis.rules }}</div><div class="label">Total rules</div></div></div>
+</div>
+{% endblock %}
+{% block list_content %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light"><tr><th>Project</th><th>Scope</th><th>Staffing</th><th>Rules</th><th></th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ row.project.name }}</div>
+          <div class="small text-muted">{{ row.project.code }} • {{ row.project.owner }}</div>
+          <div class="small mt-1"><span class="chip {% if row.project.status == 'Active' %}chip-ok{% elif row.project.status == 'At Risk' %}chip-warn{% else %}chip-bad{% endif %}">{{ row.project.status }}</span></div>
+        </td>
+        <td>
+          <div class="small">{% if row.project.start_date or row.project.end_date %}{{ row.project.start_date|default:'?' }} → {{ row.project.end_date|default:'?' }}{% else %}<span class="text-muted">No project window</span>{% endif %}</div>
+          <div class="small text-muted text-truncate" style="max-width: 260px;">
+            {% for role in row.allowed_roles|slice:':4' %}{{ role.name }}{% if not forloop.last %}, {% endif %}{% empty %}All roles{% endfor %}
+          </div>
+        </td>
+        <td>
+          <div class="fw-semibold">{{ row.assigned_employees|length }} assigned</div>
+          <div class="small text-muted">{{ row.role_issues }} role issue(s)</div>
+          <div class="small text-muted">{{ row.allowed_roles|length|default:0 }} allowed role(s)</div>
+        </td>
+        <td>
+          <div class="small"><strong>{{ row.required_skills|length }}</strong> skill • <strong>{{ row.role_constraints|length }}</strong> role</div>
+          <div class="small text-muted"><strong>{{ row.shift_constraints|length }}</strong> shift • <strong>{{ row.building_constraints|length }}</strong> building</div>
+        </td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'project_detail' row.project.code %}">Open</a>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'project_edit' row.project.pk %}">Edit</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'project_delete' row.project.pk %}">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="text-center text-muted py-4">No projects found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

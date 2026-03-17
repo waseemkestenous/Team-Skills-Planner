@@ -1,0 +1,9 @@
+{% extends 'planner/crud/list_base.html' %}
+{% block list_filters %}
+<form class="row g-2"><div class="col-md-6"><input class="form-control" name="q" value="{{ q }}" placeholder="{{ meta.search_placeholder }}"></div><div class="col-auto"><button class="btn btn-outline-primary">Search</button></div></form>
+{% endblock %}
+{% block list_content %}
+<div class="table-responsive"><table class="table table-sm align-middle"><thead class="table-light"><tr><th>Name</th><th>Over</th><th>Qualified</th><th>Improve</th><th></th></tr></thead><tbody>
+{% for row in rows %}<tr><td>{{ row.name }}</td><td>{{ row.over_threshold }}</td><td>{{ row.qualified_threshold }}</td><td>{{ row.improve_threshold }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'role_edit' row.pk %}">Edit</a> <a class="btn btn-sm btn-outline-danger" href="{% url 'role_delete' row.pk %}">Delete</a></td></tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No roles found.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

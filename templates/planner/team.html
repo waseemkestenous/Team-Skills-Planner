@@ -1,0 +1,172 @@
+{% extends 'planner/base.html' %}
+{% block title %}Employees{% endblock %}
+{% block content %}
+<div class="compact-stack">
+  <div class="card dashboard-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="section-title">Employees</h2>
+          <div class="section-subtitle">Employee roster with workforce availability, project coverage, and assignment pressure.</div>
+        </div>
+        <a href="{% url 'team' %}" class="btn btn-sm btn-outline-secondary">Clear filters</a>
+      </div>
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-lg-3">
+          <label class="filter-label">Search</label>
+          <input type="search" class="form-control" name="q" value="{{ q }}" placeholder="Code, name, email, role">
+        </div>
+        <div class="col-lg-2">
+          <label class="filter-label">Role</label>
+          <select name="role" class="form-select">
+            <option value="">All roles</option>
+            {% for role in roles %}
+              <option value="{{ role.id }}" {% if selected_role == role.id|stringformat:'s' %}selected{% endif %}>{{ role.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-2">
+          <label class="filter-label">Shift</label>
+          <select name="shift" class="form-select">
+            <option value="">All shifts</option>
+            {% for value in shift_options %}<option value="{{ value }}" {% if selected_shift == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-2">
+          <label class="filter-label">Building</label>
+          <select name="building" class="form-select">
+            <option value="">All buildings</option>
+            {% for value in building_options %}<option value="{{ value }}" {% if selected_building == value %}selected{% endif %}>{{ value }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-1">
+          <label class="filter-label">Status</label>
+          <select name="status" class="form-select">
+            <option value="">All</option>
+            <option value="Active" {% if selected_status == 'Active' %}selected{% endif %}>Active</option>
+            <option value="Inactive" {% if selected_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+        <div class="col-lg-2">
+          <label class="filter-label">Project Scope</label>
+          <select name="project" class="form-select">
+            <option value="">All projects</option>
+            {% for project in project_options %}<option value="{{ project.code }}" {% if selected_project == project.code %}selected{% endif %}>{{ project.code }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="col-lg-12 d-flex gap-2">
+          <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+          <a href="{% url 'team' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-primary">{{ kpis.employees }}</div><div class="small-note">Visible employees</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-success">{{ kpis.avg_score }}%</div><div class="small-note">Avg latest score</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-info">{{ kpis.with_availability }}</div><div class="small-note">With availability profile</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-warning">{{ kpis.ready_for_any }}</div><div class="small-note">Ready for ≥1 project</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-danger">{{ kpis.overbooked }}</div><div class="small-note">Overbooked employees</div></div></div></div>
+    <div class="col-6 col-xl-2"><div class="card kpi-card"><div class="card-body"><div class="kpi-value text-dark">{{ kpis.assigned_projects }}</div><div class="small-note">Assigned project slots</div></div></div></div>
+  </div>
+
+  <div class="card dashboard-card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+          <h2 class="section-title">Merged Workforce Table</h2>
+          <div class="section-subtitle">Employee roster, availability policy, assignment load, and project readiness in one place.</div>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm table-striped table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Employee</th>
+              <th>Role</th>
+              <th>Shift / Building</th>
+              <th>Latest</th>
+              <th>Availability</th>
+              <th>Assignments</th>
+              <th>Project Readiness</th>
+              {% if selected_project_obj %}<th>Staffing Action</th>{% endif %}<th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+            <tr>
+              <td>
+                <div class="fw-semibold">{{ row.employee.name }}</div>
+                <div class="small-note">{{ row.employee.code }}{% if row.employee.email %} • {{ row.employee.email }}{% endif %}</div>
+              </td>
+              <td>
+                <span class="chip chip-role">{{ row.employee.role.name }}</span>
+                <div class="small-note mt-1">{{ row.level }}</div>
+              </td>
+              <td>
+                <div>{{ row.employee.shift }}</div>
+                <div class="small-note">{{ row.employee.building }}</div>
+              </td>
+              <td style="min-width:170px;">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1 progress-sm"><div class="progress-bar" style="width:{{ row.score }}%"></div></div>
+                  <span>{{ row.score }}%</span>
+                </div>
+                <div class="small-note mt-1">{% if row.latest_date %}{{ row.latest_date }}{% else %}No evaluation{% endif %}</div>
+              </td>
+              <td>
+                {% if row.availability %}
+                  <div class="small"><strong>Shifts:</strong> {{ row.availability.weekly_availability|join:", "|default:"—" }}</div>
+                  <div class="small"><strong>Buildings:</strong> {{ row.availability.allowed_buildings|join:", "|default:"—" }}</div>
+                  <div class="small-note mt-1">Max concurrent: {{ row.availability.max_concurrent_projects }}</div>
+                {% else %}
+                  <span class="text-muted">No availability profile</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="fw-semibold {% if row.overbooked %}text-danger{% endif %}">{{ row.assigned_count }} project(s)</div>
+                <div class="mt-1">
+                  {% for project in row.assigned_projects|slice:':3' %}<span class="chip chip-muted">{{ project.code }}</span>{% empty %}<span class="text-muted small">None</span>{% endfor %}
+                </div>
+                {% if row.overbooked %}<div class="small-note text-danger mt-1">Exceeds max concurrent</div>{% endif %}
+              </td>
+              <td>
+                <div class="d-flex flex-wrap gap-1">
+                  <span class="chip chip-ok">Ready {{ row.ready_count }}</span>
+                  <span class="chip chip-warn">Partial {{ row.partial_count }}</span>
+                  <span class="chip chip-bad">Blocked {{ row.blocked_count }}</span>
+                </div>
+                <div class="small-note mt-1">Best fit: {{ row.best_fit }}%</div>
+              </td>
+              {% if selected_project_obj %}
+              <td>
+                {% if row.is_assigned_to_selected_project %}
+                  <form method="post" action="{% url 'project_unassign_employee' selected_project_obj.code %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="employee_code" value="{{ row.employee.code }}">
+                    <button class="btn btn-sm btn-outline-danger" type="submit">Unassign</button>
+                  </form>
+                {% elif row.selected_project_candidate and row.selected_project_candidate.status != 'Role Blocked' %}
+                  <form method="post" action="{% url 'project_assign_employee' selected_project_obj.code %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="employee_code" value="{{ row.employee.code }}">
+                    <button class="btn btn-sm btn-outline-primary" type="submit">Assign</button>
+                  </form>
+                {% else %}
+                  <span class="text-muted small">Role blocked</span>
+                {% endif %}
+              </td>
+              {% endif %}
+              <td><a class="btn btn-sm btn-outline-primary" href="{% url 'employee_detail' row.employee.code %}">Open</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-4">No employees found for the selected filters.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

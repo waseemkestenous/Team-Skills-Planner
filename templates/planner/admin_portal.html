@@ -1,0 +1,42 @@
+{% extends 'planner/base.html' %}
+{% block title %}Admin Portal{% endblock %}
+{% block content %}
+{% include 'planner/crud/_admin_tabs.html' %}
+<div class="row g-3 mb-4">
+  {% for key,value in counts.items %}
+  <div class="col-6 col-md-4 col-xl-3">
+    <div class="card kpi-card"><div class="card-body"><div class="kpi-value text-primary">{{ value }}</div><div class="small-note text-capitalize">{{ key }}</div></div></div>
+  </div>
+  {% endfor %}
+</div>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card dashboard-card h-100"><div class="card-body">
+      <h2 class="section-title">V6.3 Django CRUD UI</h2>
+      <div class="section-subtitle mb-3">Direct CRUD pages inside the same compact UI, without depending on Django admin for day-to-day updates.</div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead class="table-light"><tr><th>Area</th><th>What you can edit</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>Roles</td><td>Thresholds and level boundaries</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_roles' %}">Open</a></td></tr>
+            <tr><td>Role Skills</td><td>Weight and minimum overrides per role</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_role_skills' %}">Open</a></td></tr>
+            <tr><td>Skills</td><td>Catalog, pillars, scoring type, default weights</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_skills' %}">Open</a></td></tr>
+            <tr><td>Employees</td><td>Roster, assignments, trainings, availability</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_employees' %}">Open</a></td></tr>
+            <tr><td>Projects</td><td>Eligibility, required skills, role/shift/building constraints</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_projects' %}">Open</a></td></tr>
+            <tr><td>Trainings</td><td>Training catalog and linked skills</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_trainings' %}">Open</a></td></tr>
+            <tr><td>Evaluations</td><td>Headers, strengths/weaknesses, result rows</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crud_evaluations' %}">Open</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div></div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card dashboard-card h-100"><div class="card-body">
+      <h2 class="section-title">Fallback</h2>
+      <div class="section-subtitle mb-3">Django admin is still available for power users and bulk editing.</div>
+      <a class="btn btn-primary w-100 mb-2" href="/django-admin/">Open Django Admin</a>
+      <div class="small-note">The new CRUD UI is meant for operational editing while keeping the same UI language as the reporting pages.</div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

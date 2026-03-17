@@ -1,0 +1,68 @@
+{% extends 'planner/crud/list_base.html' %}
+{% block list_filters %}
+<form class="row g-2 align-items-end">
+  <div class="col-lg-3 col-md-6"><label class="filter-label">Search</label><input class="form-control" name="q" value="{{ q }}" placeholder="{{ meta.search_placeholder }}"></div>
+  <div class="col-lg-2 col-md-6"><label class="filter-label">Role</label><select class="form-select" name="role"><option value="">All Roles</option>{% for role in roles %}<option value="{{ role.id }}" {% if selected_role == role.id|stringformat:'s' %}selected{% endif %}>{{ role.name }}</option>{% endfor %}</select></div>
+  <div class="col-lg-2 col-md-4"><label class="filter-label">Status</label><select class="form-select" name="status"><option value="">All Statuses</option>{% for item in statuses %}<option value="{{ item }}" {% if selected_status == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+  <div class="col-lg-2 col-md-4"><label class="filter-label">Shift</label><select class="form-select" name="shift"><option value="">All Shifts</option>{% for item in shift_options %}<option value="{{ item }}" {% if selected_shift == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+  <div class="col-lg-2 col-md-4"><label class="filter-label">Building</label><select class="form-select" name="building"><option value="">All Buildings</option>{% for item in building_options %}<option value="{{ item }}" {% if selected_building == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></div>
+  <div class="col-lg-1 col-md-12 d-grid"><button class="btn btn-outline-primary">Apply</button></div>
+</form>
+<div class="row g-3 mt-1">
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-primary">{{ kpis.employees }}</div><div class="label">Visible employees</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-success">{{ kpis.active }}</div><div class="label">Active</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-info">{{ kpis.avg_score }}%</div><div class="label">Avg latest score</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-warning">{{ kpis.avg_evals }}</div><div class="label">Avg evaluations</div></div></div>
+  <div class="col-6 col-lg"><div class="matrix-stat-card"><div class="summary-value text-dark">{{ kpis.with_availability }}</div><div class="label">Availability profiles</div></div></div>
+</div>
+{% endblock %}
+{% block list_content %}
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-light"><tr><th>Employee</th><th>Role</th><th>Work Profile</th><th>Latest</th><th>Training / Projects</th><th></th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{ row.employee.name }}</div>
+          <div class="small text-muted">{{ row.employee.code }}{% if row.employee.email %} • {{ row.employee.email }}{% endif %}</div>
+          <div class="small text-muted">{{ row.employee.status }}</div>
+        </td>
+        <td>
+          <div>{{ row.employee.role.name }}</div>
+          <div class="small text-muted">{{ row.employee.shift }} • {{ row.employee.building }}</div>
+          <div class="small mt-1"><span class="chip {% if row.level == 'Over Qualified' %}chip-ok{% elif row.level == 'Qualified' %}chip-role{% elif row.level == 'Needs Improvement' %}chip-warn{% else %}chip-bad{% endif %}">{{ row.level }}</span></div>
+        </td>
+        <td>
+          {% if row.availability %}
+            <div class="small">Max concurrent: <strong>{{ row.availability.max_concurrent_projects }}</strong></div>
+            <div class="small text-muted">Shifts: {{ row.availability.weekly_availability|length }} • Buildings: {{ row.availability.allowed_buildings|length }}</div>
+            {% if row.overbooked %}<div class="small text-danger fw-semibold mt-1">Overbooked</div>{% endif %}
+          {% else %}
+            <span class="text-muted small">No availability profile</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="fw-semibold">{{ row.latest_score }}%</div>
+          <div class="small text-muted">{% if row.latest %}{{ row.latest.date }} by {{ row.latest.evaluator }}{% else %}No evaluations{% endif %}</div>
+          <div class="small text-muted">{{ row.eval_count }} evaluation(s)</div>
+        </td>
+        <td>
+          <div class="small"><strong>{{ row.trainings|length }}</strong> training(s) • <strong>{{ row.assigned_projects|length }}</strong> project(s)</div>
+          <div class="small text-muted text-truncate" style="max-width: 280px;">
+            {% for p in row.assigned_projects|slice:':3' %}{{ p.code }}{% if not forloop.last %}, {% endif %}{% empty %}No assigned projects{% endfor %}
+          </div>
+        </td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'employee_detail' row.employee.code %}">Open</a>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'employee_edit' row.employee.pk %}">Edit</a>
+          <a class="btn btn-sm btn-outline-danger" href="{% url 'employee_delete' row.employee.pk %}">Delete</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No employees found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

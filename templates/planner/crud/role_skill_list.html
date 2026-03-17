@@ -1,0 +1,13 @@
+{% extends 'planner/crud/list_base.html' %}
+{% block list_filters %}
+<form class="row g-2 align-items-end">
+  <div class="col-md-4"><input class="form-control" name="q" value="{{ q }}" placeholder="{{ meta.search_placeholder }}"></div>
+  <div class="col-md-4"><select class="form-select" name="role"><option value="">All Roles</option>{% for role in roles %}<option value="{{ role.id }}" {% if selected_role == role.id|stringformat:'s' %}selected{% endif %}>{{ role.name }}</option>{% endfor %}</select></div>
+  <div class="col-auto"><button class="btn btn-outline-primary">Filter</button></div>
+</form>
+{% endblock %}
+{% block list_content %}
+<div class="table-responsive"><table class="table table-sm align-middle"><thead class="table-light"><tr><th>Role</th><th>Skill</th><th>Pillar</th><th>Weight Override</th><th>Min Override</th><th>Effective</th><th></th></tr></thead><tbody>
+{% for row in rows %}<tr><td>{{ row.role.name }}</td><td>{{ row.skill.name }}</td><td>{{ row.skill.pillar }}</td><td>{{ row.weight_override|default:'-' }}</td><td>{{ row.min_value_override|default:'-' }}</td><td>{{ row.effective_weight }} / {{ row.effective_min_value }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'role_skill_edit' row.pk %}">Edit</a> <a class="btn btn-sm btn-outline-danger" href="{% url 'role_skill_delete' row.pk %}">Delete</a></td></tr>{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">No role skill mappings found.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

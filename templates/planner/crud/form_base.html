@@ -1,0 +1,16 @@
+{% extends 'planner/base.html' %}
+{% block content %}
+{% include 'planner/crud/_admin_tabs.html' %}
+<div class="card dashboard-card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h2 class="section-title">{{ meta.title }}</h2>
+        <div class="section-subtitle">{{ meta.subtitle }}</div>
+      </div>
+      <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
+    </div>
+    {% block form_content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}
