@@ -430,11 +430,6 @@ def team(request):
 
 
 @login_required
-def workforce(request):
-    return redirect('team')
-
-
-@login_required
 def employee_detail(request, code):
     emp = get_object_or_404(
         Employee.objects.select_related('role').prefetch_related(
@@ -447,7 +442,7 @@ def employee_detail(request, code):
     assigned_projects = list(emp.assigned_projects.all())
     trainings = list(emp.trainings.all())
     availability = getattr(emp, 'availability', None)
-
+    
     eval_rows = []
     trend_labels = []
     trend_values = []

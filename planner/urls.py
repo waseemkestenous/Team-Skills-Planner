@@ -5,21 +5,28 @@ from . import views
 urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
+    
     path('', views.dashboard, name='dashboard'),
+    
     path('team/', views.team, name='team'),
+    
     path('employees/<str:code>/', views.employee_detail, name='employee_detail'),
+    
     path('evaluations/<str:code>/', views.evaluation_detail, name='evaluation_detail'),
+    
     path('matrix/', views.matrix, name='matrix'),
+    
     path('projects/', views.projects, name='projects'),
     path('projects/<str:code>/', views.project_detail, name='project_detail'),
     path('projects/<str:code>/assign/', views.project_assign_employee, name='project_assign_employee'),
     path('projects/<str:code>/unassign/', views.project_unassign_employee, name='project_unassign_employee'),
+    
     path('training/', views.training, name='training'),
     path('training/<str:code>/', views.training_detail, name='training_detail'),
     path('training/<str:code>/assign/', views.training_assign_employee, name='training_assign_employee'),
     path('training/<str:code>/unassign/', views.training_unassign_employee, name='training_unassign_employee'),
     path('training/<str:code>/bulk-assign/', views.training_bulk_assign, name='training_bulk_assign'),
-    path('workforce/', views.workforce, name='workforce'),
+    
     path('admin-portal/', views.admin_portal, name='admin_portal'),
 
     # CRUD UI
