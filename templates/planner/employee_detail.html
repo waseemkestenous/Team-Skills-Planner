@@ -37,7 +37,7 @@
         <div class="small mb-2"><strong>Thresholds:</strong> Over {{ emp.role.over_threshold }} / Qualified {{ emp.role.qualified_threshold }} / Improve {{ emp.role.improve_threshold }}</div>
         {% if availability %}
           <div class="small mb-2"><strong>Max concurrent projects:</strong> {{ availability.max_concurrent_projects }}</div>
-          <div class="small mb-2"><strong>Allowed shifts:</strong> {{ availability.allowed_shifts|default:'—' }}</div>
+          <div class="small mb-2"><strong>Allowed shifts:</strong> {{ availability.weekly_availability|default:'—' }}</div>
           <div class="small"><strong>Allowed buildings:</strong> {{ availability.allowed_buildings|default:'—' }}</div>
         {% else %}
           <div class="text-muted small">No availability profile configured.</div>
